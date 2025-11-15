@@ -12,7 +12,6 @@ const { TableRowIcon } = findByProps("TableRowIcon");
 
 const tabsNavigationRef = bunny.metro.findByPropsLazy("getRootNavigationRef");
 const settingConstants = bunny.metro.findByPropsLazy("SETTING_RENDERER_CONFIG");
-const createListModule = bunny.metro.findByPropsLazy("createList");
 const SettingsOverviewScreen = bunny.metro.findByNameLazy(
 	"SettingsOverviewScreen",
 	false,
@@ -54,53 +53,26 @@ export function patchTabsUI(tabs: PinToSettingsTabs, patches: (() => void)[]) {
 
 	const firstRender = Symbol("pinToSettings meow meow");
 
-	try{
-		if (!createListModule) return;
-		patches.push(
-			after("createList", createListModule, function(args, ret) {
-				// shrug??
-				if (!args[0][firstRender]) {
-					args[0][firstRender] = true;
+	patches.push(
+		after("default", SettingsOverviewScreen, (args, ret) => {
+			// shrug??
+			if (!args[0][firstRender]) {
+				args[0][firstRender] = true;
 
-					const [config] = args;
-					const sections = config.sections;
+				const { sections } = findInReactTree(
+					ret,
+					i => i.props?.sections,
+				).props;
+				const section = sections?.find((x: any) =>
+					["Bunny", "Revenge"].some(
+						mod => x.label === mod && x.title === mod,
+					)
+				);
 
-					const section = sections?.find((x: any) =>
-						["Bunny", "Revenge", "Kettu"].some(
-							mod => x.label === mod && x.title === mod,
-						)
-					);
-
-					if (section?.settings) {
-						section.settings = [...section.settings, tabs.key];
-					}
+				if (section?.settings) {
+					section.settings = [...section.settings, tabs.key];
 				}
-			}),
-		);
-	} catch {
-		if (!SettingsOverviewScreen) return;
-		patches.push(
-			after("default", SettingsOverviewScreen, (args, ret) => {
-				// shrug??
-				if (!args[0][firstRender]) {
-					args[0][firstRender] = true;
-
-					const { sections } = findInReactTree(
-						ret,
-						i => i.props?.sections,
-					).props;
-					const section = sections?.find((x: any) =>
-						["Bunny", "Revenge", "Kettu"].some(
-							mod => x.label === mod && x.title === mod,
-						)
-					);
-
-					if (section?.settings) {
-						section.settings = [...section.settings, tabs.key];
-					}
-				}
-			}),
-		);
-	}
-
+			}
+		}),
+	);
 }
